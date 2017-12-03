@@ -135,7 +135,7 @@ class WaypointUpdater(object):
         # angle between car heading and heading
         angle = abs(car_heading - heading)
 
-        if angle > math.pi:
+        if angle > (math.pi / 2):
             closestWaypoint += 1
 
         return closestWaypoint
