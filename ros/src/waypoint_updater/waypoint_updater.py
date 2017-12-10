@@ -25,13 +25,17 @@ TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 
 LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this number
 
+ZERO_WAYPOINTS_BEFORE_TL = 100
+ZERO_WAYPOINTS_AFTER_TL = 10
+
+
 
 class WaypointUpdater(object):
     def __init__(self):
         rospy.init_node('waypoint_updater', log_level=rospy.DEBUG)
 
         rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
-        rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
+        self.base_subscriber = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
 
         # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
 
@@ -45,6 +49,7 @@ class WaypointUpdater(object):
         self.nextWaypoint = None # current waypoint in front of car
         self.stopfortrafficlight = False # if we have detected red light, then we stop updating final waypoints from pose_cb
         self.tl_waypoints = False # this state is used to denote that slow down TL waypoints have been calculated and published
+        self.previous_red_tl_waypoint = None
 
 
         rospy.spin()
@@ -54,16 +59,15 @@ class WaypointUpdater(object):
         # get nextWaypoint in front of car
         self.nextWaypoint = self.getNextWaypoint(msg.pose)
 
-        rospy.loginfo('trafficlightbool u pose_cb: {}'.format(self.stopfortrafficlight))
-        if self.stopfortrafficlight is False:
+        self.final_waypoints = self.base_waypoints.waypoints[self.nextWaypoint:(self.nextWaypoint + LOOKAHEAD_WPS)]
 
-            rospy.loginfo('in pose_cb no traffic light')
+        # display_velocity = []
+        # for waypoint in self.final_waypoints:
+        #     display_velocity.append(waypoint.twist.twist.linear.x)
 
-            self.final_waypoints = self.base_waypoints.waypoints[self.nextWaypoint:(self.nextWaypoint + LOOKAHEAD_WPS)]
-            self.last_pose_final_waypoints = self.final_waypoints
+        # rospy.loginfo('final_waypoints_velocity_POSE_CB: {}'.format(display_velocity))
 
-            self.publish()
-            self.tl_waypoints = False # since we updated final_waypoints with non TL waypoints
+        self.publish()
 
 
 
@@ -73,117 +77,38 @@ class WaypointUpdater(object):
 
     def waypoints_cb(self, waypoints):
         self.base_waypoints = waypoints
+        # we got points no need to be subscribed anymore
+        self.base_subscriber.unregister()
+
+
+    def set_velocity_around_tl(self, tl_waypoint, velocity):
+
+        ZERO_WAYPOINTS_START = tl_waypoint - ZERO_WAYPOINTS_BEFORE_TL
+        ZERO_WAYPOINTS_END   = tl_waypoint + ZERO_WAYPOINTS_AFTER_TL
+
+        zero_waypoints_slice = self.base_waypoints.waypoints[ZERO_WAYPOINTS_START:ZERO_WAYPOINTS_END]
+
+        for waypoint in zero_waypoints_slice:
+            waypoint.twist.twist.linear.x = velocity
+            # waypoint.twist.twist.linear.x = 11.11111111111111
 
     def traffic_cb(self, msg):
         # TODO: Callback for /traffic_waypoint message. Implement
-        rospy.loginfo('bool ovo je moja test poruka u traffic cb(): {}'.format(msg))
-        #print(msg)
 
-        # msg -1 = there is not red traffic light in front of car
+        # msg = -1 if there is no red traffic light in front of car
         if msg.data != -1:
 
-            #we have red traffic light and want to prevent pose_cv overwriting final_waypoints
-            self.stopfortrafficlight = True
-            rospy.loginfo('trafficlightbool ako ima msg: {}'.format(self.stopfortrafficlight))
-
             red_traffic_waypoint_id = msg.data
-            # # decreasing for 5 waypoints to stop sooner
-            # # red_traffic_waypoint_id -= 5
+            self.previous_red_tl_waypoint = red_traffic_waypoint_id
 
-            # #velocity_at_next_waypoint = self.get_waypoint_velocity(self.base_waypoints.waypoints[self.nextWaypoint])
-            # #rospy.loginfo('velocity at next waypoint: {}'.format(velocity_at_next_waypoint))
-            waypoints_from_car_to_tl = int(red_traffic_waypoint_id) - int(self.nextWaypoint)
-
-
-            # if waypoints_from_car_to_tl > 0:
-            #     decr_velocity_step = self.current_velocity / waypoints_from_car_to_tl
-
-            #     rospy.loginfo('vaypoints from car to tl: {}'.format(waypoints_from_car_to_tl))
-            #     rospy.loginfo('decr velocity step: {}'.format(decr_velocity_step))
-
-
-            #     # if self.current_velocity < 1 and waypoints_from_car_to_tl > 3:
-            #     #     velocity_acc = 1
-            #     # else:
-            #     #     velocity_acc = self.current_velocity
-
-            #     velocity_acc = self.current_velocity
-
-            #     decelerated_waypoints = self.base_waypoints.waypoints[self.nextWaypoint:(red_traffic_waypoint_id+ 1)]
-
-            #     for index, waypoint in enumerate(decelerated_waypoints):
-            #         velocity_acc -= decr_velocity_step
-            #         waypoint.twist.twist.linear.x = velocity_acc
-
-            #      # rospy.loginfo('nr of decelerated_waypoints: {}'.format(len(decelerated_waypoints)))
-            #     self.final_waypoints = decelerated_waypoints + self.base_waypoints.waypoints[red_traffic_waypoint_id:(red_traffic_waypoint_id+ (LOOKAHEAD_WPS - waypoints_from_car_to_tl))]
-            #     # self.final_waypoints = decelerated_waypoints
-            #     # rospy.loginfo('decl_wps: {}, fin_wps: {}'.format(len(decelerated_waypoints), len(self.final_waypoints)))
-
-
-            #     display_velocity = []
-            #     for waypoint in self.final_waypoints:
-            #         display_velocity.append(waypoint.twist.twist.linear.x)
-
-            #     rospy.loginfo('final_waypoints_velocity: {}'.format(display_velocity))
-
-            #     self.publish()
-
-            if self.tl_waypoints is False:
-                CAR_WAYPOINT = self.nextWaypoint
-                TL_WAYPOINT = red_traffic_waypoint_id
-                SLOWDOWN_WAYPOINTS = int(waypoints_from_car_to_tl * 0.1)
-                ZERO_WAYPOINTS = int(waypoints_from_car_to_tl * 0.8)
-                ZERO_WAYPOINTS_START = TL_WAYPOINT - ZERO_WAYPOINTS
-                ZERO_WAYPOINTS_END = TL_WAYPOINT
-                SLOWDOWN_WAYPOINTS_START = ZERO_WAYPOINTS_START - SLOWDOWN_WAYPOINTS
-                SLOWDOWN_WAYPOINTS_END = ZERO_WAYPOINTS_START
-                AFTER_TL_WAYPOINTS_START = TL_WAYPOINT
-                AFTER_TL_WAYPOINTS_END = TL_WAYPOINT + 100
-
-
-                waypoints_before_slowdown = self.base_waypoints.waypoints[CAR_WAYPOINT:SLOWDOWN_WAYPOINTS_START]
-                slowdown_waypoints_before_tl = self.base_waypoints.waypoints[SLOWDOWN_WAYPOINTS_START:SLOWDOWN_WAYPOINTS_END]
-                zero_waypoints_before_tl = self.base_waypoints.waypoints[ZERO_WAYPOINTS_START:ZERO_WAYPOINTS_END]
-                waypoints_after_tl = self.base_waypoints.waypoints[AFTER_TL_WAYPOINTS_START:AFTER_TL_WAYPOINTS_END]
-
-                # initial_velocity = 11.11
-                # for waypoint in slowdown_waypoints_before_tl:
-                #     initial_velocity /= 2
-                #     waypoint.twist.twist.linear.x = initial_velocity
-
-                velocity_acc = self.current_velocity
-                decr_velocity_step = self.current_velocity / waypoints_from_car_to_tl
-
-                for waypoint in slowdown_waypoints_before_tl:
-                    velocity_acc -= decr_velocity_step
-                    waypoint.twist.twist.linear.x = velocity_acc
-
-                for waypoint in zero_waypoints_before_tl:
-                    waypoint.twist.twist.linear.x = 0.0
-
-                self.final_waypoints = waypoints_before_slowdown + slowdown_waypoints_before_tl + zero_waypoints_before_tl + waypoints_after_tl
-                # self.final_waypoints = zero_waypoints_before_tl + waypoints_after_tl
-
-                display_velocity = []
-                for waypoint in self.final_waypoints:
-                    display_velocity.append(waypoint.twist.twist.linear.x)
-
-                rospy.loginfo('final_waypoints_velocity: {}'.format(display_velocity))
-
-                self.publish()
-                # self.tl_waypoints = True
+            self.set_velocity_around_tl(red_traffic_waypoint_id, 0.0)
 
         else:
-            self.stopfortrafficlight = False
-            rospy.loginfo('trafficlightbool ako nema msg: {}'.format(self.stopfortrafficlight))
-
-
-        # if we have fully stopped in front of light, our current pose is not changing
-            # so let's give car a little nudge
-        #if self.current_velocity == 0:
-        #    self.final_waypoints = self.last_pose_final_waypoints
-
+            # No RED traffic light case
+            # reset velocity to 11.11111111111111
+            if self.previous_red_tl_waypoint is not None:
+                self.set_velocity_around_tl(self.previous_red_tl_waypoint, 11.11111111111111)
+                self.previous_red_tl_waypoint = None
 
 
     def obstacle_cb(self, msg):
