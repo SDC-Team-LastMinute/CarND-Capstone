@@ -99,14 +99,18 @@ class WaypointUpdater(object):
         if msg.data != -1:
 
             red_traffic_waypoint_id = msg.data
-            self.previous_red_tl_waypoint = red_traffic_waypoint_id
 
-            self.set_velocity_around_tl(red_traffic_waypoint_id, 0.0)
+            if red_traffic_waypoint_id != self.previous_red_tl_waypoint:
+                rospy.loginfo('RED Light waypoint ahead. Setting zero velocity waypoints')
+
+                self.previous_red_tl_waypoint = red_traffic_waypoint_id
+                self.set_velocity_around_tl(red_traffic_waypoint_id, 0.0)
 
         else:
             # No RED traffic light case
             # reset velocity to 11.11111111111111
             if self.previous_red_tl_waypoint is not None:
+                rospy.loginfo('RED Light waypoint gone. Resetting velocity waypoints to normal')
                 self.set_velocity_around_tl(self.previous_red_tl_waypoint, 11.11111111111111)
                 self.previous_red_tl_waypoint = None
 
