@@ -15,7 +15,32 @@ This is the project repo for the final project of the Udacity Self-Driving Car N
 ### Nodes:
 #### Waypoint Updater
 
+In order to smoothly stop and start at a detected traffic light, 15 waypoints leading up to the traffic light are used to linearly increase or decrease the desired velocity.
+
 #### DBW
+
+The Drive by Wire (DBW) node takes in commands from upstream services in the form of ROS Twist commands. The commands are essentially the desired car velocity (in m/s) in the axial (or forward) direction of the car, and the desired angular velocity (in rad/s) to assist in steering.
+
+The commands are interpreted by the DBW node to output:
+  * Throttle setting (between 0 and 1)
+  * Steering angle (in radians, 0 is straight)
+  * Braking (in Newton meters, must be positive)
+  
+These three output values are transmitted to the vehicle hardware control mechanisms, and are actuated by either the simulator or the self driving car.
+
+##### Low Pass Filter
+The sensed current velocity had a significant amount of high frequency noise in simulator version 1.2. This required the sensed velocity to be passed through a low pass filter, which introduces very slight lag but effectively eliminated the noise. The low pass filter used the following settings:
+  * Hz = 0.0001 # Setting cutoff freq = 0.0001 Hz
+  * Tau = 1./(hz* 2* pi) = 1592
+  * S = 50.
+
+It should be noted that the simulator version 1.3 seems to have much lower noise from the sensors, but the low pass filter above works for this version also.
+
+##### Throttle PID Controller
+
+##### Steering Controller
+
+##### Braking Controller
 
 #### Traffic Light Detection
 
