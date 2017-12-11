@@ -98,12 +98,12 @@ class DBWNode(object):
                                                                 self.current_velocity,
                                                                 self.current_angularv,
                                                                 self.dbw_enabled)
-            time_index = rospy.get_time() - self.start_time
+            # These are settings used for PID tuning:
+            #time_index = rospy.get_time() - self.start_time
             #if time_index < 50: throttle = 1.0
             #if time_index < 40: throttle = 0.6
             #if time_index < 30: throttle = 0.8
             #if time_index < 20: throttle = 0.1
-            #throttle = 0.5
             #steering = 0.0
 
             if self.dbw_enabled:

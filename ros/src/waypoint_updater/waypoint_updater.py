@@ -7,6 +7,7 @@ from std_msgs.msg import Int32
 from tf.transformations import euler_from_quaternion
 
 import math
+import csv
 
 '''
 This node will publish waypoints from the car's current position to some `x` distance ahead.
@@ -25,8 +26,8 @@ TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 
 LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this number
 
-ZERO_WAYPOINTS_BEFORE_TL = 100
-ZERO_WAYPOINTS_AFTER_TL = 10
+ZERO_WAYPOINTS_BEFORE_TL = 15
+ZERO_WAYPOINTS_AFTER_TL = 2
 
 
 
@@ -50,7 +51,6 @@ class WaypointUpdater(object):
         self.stopfortrafficlight = False # if we have detected red light, then we stop updating final waypoints from pose_cb
         self.tl_waypoints = False # this state is used to denote that slow down TL waypoints have been calculated and published
         self.previous_red_tl_waypoint = None
-
 
         rospy.spin()
 
@@ -83,13 +83,25 @@ class WaypointUpdater(object):
 
     def set_velocity_around_tl(self, tl_waypoint, velocity):
 
-        ZERO_WAYPOINTS_START = tl_waypoint - ZERO_WAYPOINTS_BEFORE_TL
-        ZERO_WAYPOINTS_END   = tl_waypoint + ZERO_WAYPOINTS_AFTER_TL
+        # The stopping location is offset by 3 wp's because otherwise the car center stops on the stop line
+        # instead of the front of the car stopping on the stop line
+        ZERO_WAYPOINTS_START = tl_waypoint - ZERO_WAYPOINTS_BEFORE_TL - 3
+        ZERO_WAYPOINTS_END   = tl_waypoint + ZERO_WAYPOINTS_AFTER_TL - 3
 
         zero_waypoints_slice = self.base_waypoints.waypoints[ZERO_WAYPOINTS_START:ZERO_WAYPOINTS_END]
 
+        # Find the average velocity previously set leading up to the traffic light
+        sum = 0.0
+        for waypoint in self.base_waypoints.waypoints[tl_waypoint-ZERO_WAYPOINTS_BEFORE_TL:tl_waypoint]:
+            sum += waypoint.twist.twist.linear.x
+        avg_velocity = sum/ZERO_WAYPOINTS_BEFORE_TL
+        
+        # Calculate a linear increment/decrement for the WP's leading up to the TL
+        delta = (velocity-avg_velocity)/ZERO_WAYPOINTS_BEFORE_TL
         for waypoint in zero_waypoints_slice:
-            waypoint.twist.twist.linear.x = velocity
+            wp_velocity = avg_velocity+delta
+            waypoint.twist.twist.linear.x = wp_velocity
+            avg_velocity = wp_velocity
             # waypoint.twist.twist.linear.x = 11.11111111111111
 
     def traffic_cb(self, msg):
@@ -111,6 +123,7 @@ class WaypointUpdater(object):
             # reset velocity to 11.11111111111111
             if self.previous_red_tl_waypoint is not None:
                 rospy.loginfo('RED Light waypoint gone. Resetting velocity waypoints to normal')
+                # Hardcoded velocity = bad, should get the setpoint velocity from the base waypoints
                 self.set_velocity_around_tl(self.previous_red_tl_waypoint, 11.11111111111111)
                 self.previous_red_tl_waypoint = None
 
