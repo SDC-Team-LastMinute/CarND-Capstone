@@ -26,7 +26,7 @@ TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 
 LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this number
 
-ZERO_WAYPOINTS_BEFORE_TL = 15
+ZERO_WAYPOINTS_BEFORE_TL = 25
 ZERO_WAYPOINTS_AFTER_TL = 2
 
 
@@ -95,7 +95,7 @@ class WaypointUpdater(object):
         for waypoint in self.base_waypoints.waypoints[tl_waypoint-ZERO_WAYPOINTS_BEFORE_TL:tl_waypoint]:
             sum += waypoint.twist.twist.linear.x
         avg_velocity = sum/ZERO_WAYPOINTS_BEFORE_TL
-        
+
         # Calculate a linear increment/decrement for the WP's leading up to the TL
         delta = (velocity-avg_velocity)/ZERO_WAYPOINTS_BEFORE_TL
         for waypoint in zero_waypoints_slice:
