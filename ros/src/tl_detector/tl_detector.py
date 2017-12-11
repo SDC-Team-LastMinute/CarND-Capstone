@@ -12,6 +12,7 @@ import cv2
 import yaml
 import math
 from tf.transformations import euler_from_quaternion
+import collections
 
 STATE_COUNT_THRESHOLD = 3
 
@@ -24,6 +25,7 @@ class TLDetector(object):
         self.camera_image = None
         self.lights = []
         self.distance_sorted_stop_line_positions = []
+        self.previous_frame_detected_state = collections.deque(5*[4], 5)
 
         sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
@@ -260,9 +262,14 @@ class TLDetector(object):
 
         if light:
             state = self.get_light_state(light)
-            #print(state)
-            return light_wp, state
-        #self.waypoints = None ## commenting out for now since it breaks
+
+            # rospy.loginfo(self.previous_frame_detected_state)
+            if state == max(set(self.previous_frame_detected_state), key=self.previous_frame_detected_state.count):
+                self.previous_frame_detected_state.appendleft(state)
+                return light_wp, state
+
+            self.previous_frame_detected_state.appendleft(state)
+
         return -1, TrafficLight.UNKNOWN
 
 if __name__ == '__main__':

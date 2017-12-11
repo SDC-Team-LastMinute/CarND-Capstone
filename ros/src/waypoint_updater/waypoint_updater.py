@@ -77,11 +77,22 @@ class WaypointUpdater(object):
 
     def waypoints_cb(self, waypoints):
         self.base_waypoints = waypoints
+
+        # make copy of original waypoints
+        import copy
+        self.orig_base_waypoints = copy.deepcopy(waypoints)
         # we got points no need to be subscribed anymore
         self.base_subscriber.unregister()
 
 
-    def set_velocity_around_tl(self, tl_waypoint, velocity):
+    def set_velocity_around_tl(self, tl_waypoint, breaking):
+
+        if breaking:
+            velocity = 0.0
+        else:
+            velocity = self.orig_base_waypoints.waypoints[tl_waypoint].twist.twist.linear.x
+
+        # rospy.loginfo('Velocity in set_vel: {}'.format(velocity))
 
         # The stopping location is offset by 3 wp's because otherwise the car center stops on the stop line
         # instead of the front of the car stopping on the stop line
@@ -116,15 +127,13 @@ class WaypointUpdater(object):
                 rospy.loginfo('RED Light waypoint ahead. Setting zero velocity waypoints')
 
                 self.previous_red_tl_waypoint = red_traffic_waypoint_id
-                self.set_velocity_around_tl(red_traffic_waypoint_id, 0.0)
+                self.set_velocity_around_tl(red_traffic_waypoint_id, breaking = True)
 
         else:
             # No RED traffic light case
-            # reset velocity to 11.11111111111111
             if self.previous_red_tl_waypoint is not None:
                 rospy.loginfo('RED Light waypoint gone. Resetting velocity waypoints to normal')
-                # Hardcoded velocity = bad, should get the setpoint velocity from the base waypoints
-                self.set_velocity_around_tl(self.previous_red_tl_waypoint, 11.11111111111111)
+                self.set_velocity_around_tl(self.previous_red_tl_waypoint, breaking = False)
                 self.previous_red_tl_waypoint = None
 
 
