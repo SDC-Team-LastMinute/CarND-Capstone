@@ -37,10 +37,25 @@ The sensed current velocity had a significant amount of high frequency noise in 
 It should be noted that the simulator version 1.3 seems to have much lower noise from the sensors, but the low pass filter above works for this version also.
 
 ##### Throttle PID Controller
+The throttle is controlled using a PID system:
+The desired speed / throttle input was modelled with a Transfer Function and is given by: 0.0106 / s^2 + 0.309* s + 0.0006874
+The transfer function was used in a feedback control analysis to determine the best coefficients for the PID system as follows:
+  * kP = 0.724
+  * kI = 0.002036
+  * kD = 0.0
 
 ##### Steering Controller
+The steering is controlled with a project supplied yaw controller python file that initializes with properties of the car including the wheel base, steering ratio, and minimum and maximum steering angles and accelerations.
+This controller is similar to a direct proportional control where the steering angle is adjusted according to the difference between the desired angle and the current steering angle.
 
 ##### Braking Controller
+The braking controller is expected to be in units of Torque (Nm). The controller will engage the brake only if the throttle is below a minimum threshold (here 0.1) and the desired velocity is lower than the current velocity. This prevents the brakes from being applied at the same time as the throttle which may cause adverse driving behaviour and unnecessary wear on the brake pads.
+
+The braking force required was calculated using Newtons second law; by using the known weight of the vehicle, added to the amount of fuel in the gas tank (converted to kg), and multiplied by the desired deceleration.
+
+The braking torque was then calculated as the braking force multiplied by the wheel radius. This braking torque must be positive and was transmitted as a braking command to the vehicle actuators.
+
+Performance of the braking and acceleration limits could be further tuned in the future. It is likely that all controllers would need to be tuned for the Udacity Self Driving Car - Carla, as the simulator parameters may not reflect reality.
 
 #### Traffic Light Detection
 
