@@ -11,8 +11,8 @@
 
 This is the project repo for the final project of the Udacity Self-Driving Car Nanodegree: Programming a Real Self-Driving Car. For more information about the project, see the project introduction [here](https://classroom.udacity.com/nanodegrees/nd013/parts/6047fe34-d93c-4f50-8336-b70ef10cb4b2/modules/e1a23b06-329a-4684-a717-ad476f0d8dff/lessons/462c933d-9f24-42d3-8bdc-a08a5fc866e4/concepts/5ab4b122-83e6-436d-850f-9f4d26627fd9).
 
-### TODO: project description ...
-### Nodes:
+### Project Description
+### Node implementation
 #### Waypoint Updater
 
 In order for the car to safely and successfully navigate the track, the car must come to a stop when reaching red lights. The waypoint updater node helps accomplish this through adjustments to the target velocities at the waypoints leading up to a red light.
@@ -72,7 +72,7 @@ In order to do this, it takes in continuously updated feeds on the vehicles pose
 * Idea to use tensorflow object api came from - https://medium.com/@anthony_sarkis/self-driving-cars-implementing-real-time-traffic-light-detection-and-classification-in-2017-7d9ae8df1c58
 * Network model choice based in inference speed and initial pretraining accuracy of detecting traffic light on udacity sim and real course images.
 	* Idea was to try models from https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/detection_model_zoo.md and pick one that has good inference time with good accuracy - detecting traffic lights out of the box. After some experimentation, the faster_rcnn_inception_v2_coco model was chosen.
-	* Sample traffic light data was collected from both the simulator and from udacity provided bags for the real course - capturing was done using image_exporter from ros while running the simulator as well as playing before mentioned udacity rosbags. Dataset preparation was done according to https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/using_your_own_dataset.md. Dataset specs (add table with number of samples)
+	* Sample traffic light data was collected from both the simulator and from udacity provided bags for the real course - capturing was done using image_exporter from ros while running the simulator as well as playing before mentioned udacity rosbags. Dataset preparation was done according to https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/using_your_own_dataset.md.
 	* NN for real and sim were trained separately, due to inferencing issues when trained together. Training was done with transfer learning using already pretrained faster_rcnn_inception_v2_coco model (started from models fine_tune_checkpoint - https://github.com/tensorflow/models/blob/f87a58cd96d45de73c9a8330a06b2ab56749a7fa/research/object_detection/g3doc/configuring_jobs.md)
 
 ### Native Installation
