@@ -15,7 +15,12 @@ This is the project repo for the final project of the Udacity Self-Driving Car N
 ### Nodes:
 #### Waypoint Updater
 
-In order to smoothly stop and start at a detected traffic light, 15 waypoints leading up to the traffic light are used to linearly increase or decrease the desired velocity.
+In order for the car to safely and successfully navigate the track, the car must come to a stop when reaching red lights. The waypoint updater node helps accomplish this through adjustments to the target velocities at the waypoints leading up to a red light.
+
+The node takes in data on the track waypoints, continuously updated data about the car's pose, continuosly updated velocity data, and updates on the state of upcoming traffic lights.  When an upcoming red light is detected, a certain amount of nodes before (25) and after (2) have their target velocities adjusted so that the car will come to a complete stop at the traffic light stop line.  Each node from the first adjusted node before the traffic light up to the line at which we seek to stop is set with a linearly decreasing target velocity that results in the traffic light waypoint having a velocity of 0.
+
+Through this waypoint update and the vehicle's controller, the car is able to come to a complete stop at the traffic light stop point.
+
 
 #### DBW
 
