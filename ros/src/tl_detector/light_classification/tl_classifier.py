@@ -66,15 +66,23 @@ class TLClassifier(object):
             [self.detection_boxes, self.detection_scores, self.detection_classes, self.num_detections],
             feed_dict={self.image_tensor: image_np_expanded})
 
-        top_3_classes = list(classes[0][:3])
-        top_predicted_class_int = max(set(top_3_classes), key=top_3_classes.count)
+        top_predicted_class_int = classes[0][0]
 
         #int -> class mapping
+        # Green
         if top_predicted_class_int == 1:
             return TrafficLight.GREEN
+        # Red
         elif top_predicted_class_int == 2:
             return TrafficLight.RED
+        # Yellow, but will respond as Red so we can start breaking earlier
         elif top_predicted_class_int == 7:
-            return TrafficLight.YELLOW
+            # return TrafficLight.YELLOW
+            return TrafficLight.RED
         else:
             return TrafficLight.UNKNOWN
+
+        # if top_predicted_class_int == 1:
+        #     return TrafficLight.GREEN
+        # else:
+        #     return TrafficLight.RED

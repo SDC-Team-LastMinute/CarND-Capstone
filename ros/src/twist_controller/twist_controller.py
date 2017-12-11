@@ -91,6 +91,7 @@ class Controller(object):
             self.current_velocity_filtered = self.low_pass.filt(self.current_velocity)
 
             # Throttle PID
+            # Only to be active if setpoint is above minimum car velocity and below ludicrous speed (90 m/s)
             if (self.goal_velocity > self.min_car_speed)&(self.goal_velocity < 90.):
                 # set velocity error
                 v_err = (self.goal_velocity - self.current_velocity_filtered)#/self.goal_velocity
@@ -109,18 +110,20 @@ class Controller(object):
                 v_err = (self.goal_velocity - self.current_velocity_filtered) # magnitude of slowdown
 
                 # if we want to speed up, don't brake
-                if v_err > 0:
+                if v_err > 0.:
                     brake = 0.0
                 else:
                     # Here v_err is assumed m/s/s, which implies that the velocity nodes are smoothly decreasing
                     # i.e. the velocity nodes shouldn't go from full speed to 0 in 1 step, or car will likely miss
-                    max_brake_acc = max(v_err,self.decel_limit) # assumed units [m/s/s]
+                    #max_brake_acc = max(v_err,self.decel_limit) # assumed units [m/s/s]
+                    max_brake_acc = abs(v_err) #braking must be positive
                     brake_force =  max_brake_acc*total_vehicle_mass  # F = ma [N]
                     brake = brake_force*self.wheel_radius # Torque = F*d [Nm] assumes wheel radius in [m]
 
                     # IMPORTANT: Brake Torque is the TOTAL torque required to brake. Hopefully Carla assumes this also,
                     # And it is not the torque on an individual brake disc or wheel.
                     # If so then you would divide this torque by 2 or 4 depending on the wheels to reduce brake force
+
         #Resetting PID controller if not DBW
         else:
             self.speed_control.reset()
