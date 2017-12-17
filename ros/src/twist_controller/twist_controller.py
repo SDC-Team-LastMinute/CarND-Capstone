@@ -39,9 +39,9 @@ class Controller(object):
 
         # Transfer Function: 0.0106 / s^2 + 0.309*s + 0.0006874
         # y/u = Speed / Throttle Input
-        kP = 0.724
-        kI = 0.002036
-        kD = 0.0
+        #kP = 0.724
+        #kI = 0.002036
+        #kD = 0.0
 
         # 1.5 times response time:
         #kP = 0.4788
@@ -52,9 +52,15 @@ class Controller(object):
         #kP = 0.108
         #kI = 0.0003081
 
-        # Halfway in between
-        #kP = 0.2317
-        #kI = 0.0005145
+        # Reduced intensity. Less aggressive acceleration.
+        #kP = 0.0824
+        #kI = 0.0035
+        #kD = 0.001
+
+        # Fine Tuning Parking Lot
+        kP = 0.0924
+        kI = 0.0070
+        kD = 0.00
 
         self.speed_control = PID(kP,kI,kD)
         # set control  limits
@@ -62,9 +68,9 @@ class Controller(object):
         self.speed_control.min = 0.0
 
         # Init Low Pass Filter
-        _hz = 0.0001 # Setting cutoff freq = 0.0001 Hz
+        _hz = 0.001 # Setting cutoff freq = 0.0001 Hz
         _tau = 1./(_hz*2.*math.pi)
-        _s = 50. # higher s-val means more accurate match to original signal, less time smoothing
+        _s = 75. # higher s-val means more accurate match to original signal, less time smoothing
         self.low_pass = LowPassFilter(_tau,_s)
 
 
@@ -103,7 +109,7 @@ class Controller(object):
             # Apply brakes using torque (Nm):
 
             # limit braking to when throttle is low, this may need tuning
-            if (throttle < 0.1):
+            if (throttle < 0.05):
 
                 # assumed units vehicle mass [kg], fuel_cap in [gal], total in [kg]
                 total_vehicle_mass = self.vehicle_mass + self.fuel_capacity*GAS_DENSITY #gallons to kg for fuel

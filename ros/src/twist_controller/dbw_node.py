@@ -120,8 +120,6 @@ class DBWNode(object):
         self.current_velocity = msg.twist.linear.x
         self.current_angularv = msg.twist.angular.z
 
-
-
     def twist_cb(self,msg):
         # Same convention as before, same as used in course. x+ in direction of travel, RHR.
         self.goal_velocity = msg.twist.linear.x
