@@ -94,10 +94,9 @@ class WaypointUpdater(object):
 
         # rospy.loginfo('Velocity in set_vel: {}'.format(velocity))
 
-        # The stopping location is offset by 3 wp's because otherwise the car center stops on the stop line
-        # instead of the front of the car stopping on the stop line
-        ZERO_WAYPOINTS_START = tl_waypoint - ZERO_WAYPOINTS_BEFORE_TL - 3
-        ZERO_WAYPOINTS_END   = tl_waypoint + ZERO_WAYPOINTS_AFTER_TL - 3
+        # Setting waypoints before and after TL stop point
+        ZERO_WAYPOINTS_START = tl_waypoint - ZERO_WAYPOINTS_BEFORE_TL
+        ZERO_WAYPOINTS_END   = tl_waypoint + ZERO_WAYPOINTS_AFTER_TL
 
         zero_waypoints_slice = self.base_waypoints.waypoints[ZERO_WAYPOINTS_START:ZERO_WAYPOINTS_END]
 
